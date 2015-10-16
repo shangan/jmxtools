@@ -1,0 +1,77 @@
+{
+  "serviceName": "HiveMetaStore",
+  "endpoints": [
+    {
+      "name": "dev-hdp-nn02:5555",
+      "remote": true
+    },
+    {
+      "name": ".*HiveMetaStore.*",
+      "remote": false
+    }
+  ],
+  "queries": [
+    {
+      "name": "Memory",
+      "objectName": "java.lang:type=Memory",
+      "attributes": [
+        ["HeapMemoryUsage", "used"],
+        ["HeapMemoryUsage", "committed"],
+        ["HeapMemoryUsage", "max"],
+        ["NonHeapMemoryUsage", "used"],
+        ["NonHeapMemoryUsage", "committed"],
+        ["NonHeapMemoryUsage", "max"]
+      ]
+    }, {
+      "name": "EdenSpace",
+      "objectName": "java.lang:type=MemoryPool,name=PS Eden Space",
+      "attributes": [
+        ["Usage", "used"],
+        ["Usage", "committed"],
+        ["Usage", "max"]
+      ]
+    }, {
+      "name": "SurvivorSpace",
+      "objectName": "java.lang:type=MemoryPool,name=PS Survivor Space",
+      "attributes": [
+        ["Usage", "used"],
+        ["Usage", "committed"],
+        ["Usage", "max"]
+      ]
+    }, {
+      "name": "OldSpace",
+      "objectName": "java.lang:type=MemoryPool,name=PS Old Gen",
+      "attributes": [
+        ["Usage", "used"],
+        ["Usage", "committed"],
+        ["Usage", "max"]
+      ]
+    }, {
+      "name": "PermSpace",
+      "objectName": "java.lang:type=MemoryPool,name=PS Perm Gen",
+      "attributes": [
+        ["Usage", "used"],
+        ["Usage", "committed"],
+        ["Usage", "max"]
+      ]
+    }, {
+      "name": "MinorGC",
+      "objectName": "java.lang:type=GarbageCollector,name=PS Scavenge",
+      "attributes": [
+        ["CollectionCount"],
+        ["CollectionTime"],
+        ["LastGcInfo", "GcThreadCount"],
+        ["LastGcInfo", "duration"]
+      ]
+    }, {
+      "name": "MajorGC",
+      "objectName": "java.lang:type=GarbageCollector,name=PS MarkSweep",
+      "attributes": [
+        ["CollectionCount"],
+        ["CollectionTime"],
+        ["LastGcInfo", "GcThreadCount"],
+        ["LastGcInfo", "duration"]
+      ]
+    }
+  ]
+}
