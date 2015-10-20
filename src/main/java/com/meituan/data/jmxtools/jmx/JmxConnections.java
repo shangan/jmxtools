@@ -1,7 +1,7 @@
 package com.meituan.data.jmxtools.jmx;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.meituan.data.jmxtools.conf.Endpoint;
-import com.meituan.data.jmxtools.utils.DaemonThreadFactory;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
@@ -23,7 +23,12 @@ import java.util.concurrent.*;
  */
 public class JmxConnections {
     static final Logger LOG = LoggerFactory.getLogger(JmxConnections.class);
-    static final String LOCAL_CONNECTOR_ADDRESS = "com.sun.management.jmxremote.localConnectorAddress";
+
+    static final ThreadFactory DAEMON_THREAD_FACTORY =
+            new ThreadFactoryBuilder()
+                    .setDaemon(true)
+                    .setNameFormat("jmx-connector-pool-%d")
+                    .build();
 
     public static JMXConnector connectWithTimeout(Endpoint endpoint, long timeout, TimeUnit unit) throws IOException {
         JMXServiceURL url;
@@ -34,7 +39,7 @@ public class JmxConnections {
             url = getLocalAttachURL(endpoint.getName());
         }
 
-        LOG.info("Trying to connect {}", url);
+        LOG.debug("Trying to connect {}", url);
         return connectWithTimeout(url, timeout, unit);
     }
 
@@ -43,6 +48,7 @@ public class JmxConnections {
     }
 
     private static JMXServiceURL getLocalAttachURL(String processRegex) throws IOException {
+        final String LOCAL_CONNECTOR_ADDRESS = "com.sun.management.jmxremote.localConnectorAddress";
         try {
             for (VirtualMachineDescriptor vmd : VirtualMachine.list()) {
                 if (vmd.displayName().matches(processRegex)) {
@@ -83,10 +89,10 @@ public class JmxConnections {
      * https://weblogs.java.net/blog/emcmanus/archive/2007/05/making_a_jmx_co.html
      */
     private static JMXConnector connectWithTimeout(final JMXServiceURL url, long timeout, TimeUnit unit) throws IOException {
-        final BlockingQueue<Object> mailbox = new ArrayBlockingQueue<Object>(1);
+        final BlockingQueue<Object> mailbox = new ArrayBlockingQueue<>(1);
 
         // make connection in another thread so that we can timeout the request
-        ExecutorService executor = Executors.newSingleThreadExecutor(DaemonThreadFactory.instance);
+        ExecutorService executor = Executors.newSingleThreadExecutor(DAEMON_THREAD_FACTORY);
         executor.submit(new Runnable() {
             public void run() {
                 try {

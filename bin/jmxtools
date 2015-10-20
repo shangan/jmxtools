@@ -1,0 +1,56 @@
+#! /bin/bash
+bin=`which $0`
+bin=`dirname ${bin}`
+bin=`cd "$bin"; pwd`
+
+CONF_DIR="$bin"/../conf
+LIB_DIR="$bin"/../lib
+
+JAVA_HOME=${JAVA_HOME:-'/usr/local/java'}
+
+function print_usage() {
+    echo "Usage: jmxtools COMMAND"
+    echo "---------"
+    echo "where COMMAND is one of:"
+    echo "  report          collect JMX metrics and report to a monitoring system"
+    echo "  collect         collect JMX metrics and print them"
+    echo "  jmx2json        print a JSON representation of JMX information"
+    echo ""
+    echo "Examples:"
+    echo "---------"
+    echo "jmxtools report <path-to-config-file>"
+    echo "jmxtools collect <path-to-config-files>..."
+    echo "jmxtools jmx2json --remote host:port"
+    echo "                  --local <process-regex>"
+    echo ""
+}
+
+if [ $# = 0 ]; then
+    print_usage
+    exit
+fi
+
+COMMAND=$1
+shift
+
+case $COMMAND in
+    --help|-help|-h)
+        print_usage
+        exit
+        ;;
+esac
+
+if [ "$COMMAND" = "report" ]; then
+    CLASS='com.meituan.data.jmxtools.Jmx2Falcon'
+elif [ "$COMMAND" = "collect" ]; then
+    CLASS='com.meituan.data.jmxtools.Jmx2Metrics'
+elif [ "$COMMAND" == "jmx2json" ]; then
+    CLASS='com.meituan.data.jmxtools.Jmx2Json'
+else
+    echo "Unkown command!"
+    print_usage
+    exit 1
+fi
+
+export CLASSPATH=$CONF_DIR:$LIB_DIR'/*':$JAVA_HOME/lib/tools.jar
+exec $JAVA_HOME/bin/java $CLASS "$@"

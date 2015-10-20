@@ -2,6 +2,8 @@ package com.meituan.data.jmxtools;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.meituan.data.jmxtools.conf.Endpoint;
+import com.meituan.data.jmxtools.jmx.JmxConnections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,35 +12,91 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.TabularData;
 import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
-import javax.management.remote.JMXServiceURL;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Array;
-import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
-// TODO refactor into a runnable tools
-public class TestJMX2Json {
-    final Logger LOG = LoggerFactory.getLogger(TestJMX2Json.class);
+/**
+ * This class simulates functions of Hadoop's JMXJsonServlet,
+ * provides a JSON representation of all the JMX MBeans in a Java program.
+ *
+ * The return format is in the form
+ * <p>
+ *  <code><pre>
+ *  {
+ *    "beans" : [
+ *      {
+ *        "name":"bean-name"
+ *        ...
+ *      }
+ *    ]
+ *  }
+ *  </pre></code>
+ *  <p>
+ *  The program attempts to convert the the JMXBeans into JSON. Each
+ *  bean's attributes will be converted to a JSON object member.
+ *
+ *  If the attribute is a boolean, a number, a string, or an array
+ *  it will be converted to the JSON equivalent.
+ *
+ *  If the value is a {@link CompositeData} then it will be converted
+ *  to a JSON object with the keys as the name of the JSON member and
+ *  the value is converted following these same rules.
+ *
+ *  If the value is a {@link TabularData} then it will be converted
+ *  to an array of the {@link CompositeData} elements that it contains.
+ *
+ *  All other objects will be converted to a string and output as such.
+ *
+ *  The bean's name and modelerType will be returned for all beans.
+ */
+public class Jmx2Json implements AutoCloseable {
+    final static Logger LOG = LoggerFactory.getLogger(Jmx2Json.class);
+    final static long DEFAULT_JMX_TIMEOUT_SECOND = 10;
 
+    JMXConnector connector;
     MBeanServerConnection mBeanServer;
 
-    public TestJMX2Json(String host, int port) throws IOException {
-        mBeanServer = createConnection(host, port);
+    public Jmx2Json(Endpoint endpoint) throws IOException {
+        connector = JmxConnections.connectWithTimeout(endpoint, DEFAULT_JMX_TIMEOUT_SECOND, TimeUnit.SECONDS);
+        mBeanServer = connector.getMBeanServerConnection();
     }
 
-    private MBeanServerConnection createConnection(String host, int port) throws IOException {
-        // connect to remote mbean server
-        JMXServiceURL address = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + host + ":" + port + "/jmxrmi");
-        JMXConnector jmxc = JMXConnectorFactory.connect(address);
-        return jmxc.getMBeanServerConnection();
+    @Override
+    public void close() throws IOException {
+        if (connector != null) {
+            connector.close();
+        }
+    }
+
+    static void printUsageAndExit() {
+        final String usage = "Usage:\n" +
+                "jmx2json --remote host:port\n" +
+                "         --local <process-regex>\n";
+        System.err.println(usage);
+        System.exit(1);
     }
 
     public static void main(String[] args) throws IOException {
-        new TestJMX2Json(args[0], Integer.valueOf(args[1])).printMBeansAsJson(new OutputStreamWriter(System.out));
+        if (args.length != 2 || !("--remote".equals(args[0]) || "--local".equals(args[0]))) {
+            printUsageAndExit();
+        }
+
+        Endpoint endpoint = new Endpoint(/*name=*/args[1], /*isRemote=*/"--remote".equals(args[0]));
+
+        try (Jmx2Json jmx2Json = new Jmx2Json(endpoint)) {
+            jmx2Json.printMBeansAsJson(new OutputStreamWriter(System.out));
+        }
     }
+
+    // ----------------------------------------------------------------
+    // Functions pertaining to serializing JMX info to JSON.
+    //
+    // Code brought from org.apache.hadoop.jmx.JMXJsonServlet.
+    // ----------------------------------------------------------------
 
     private void printMBeansAsJson(Writer writer) throws IOException {
         JsonFactory jsonFactory = new JsonFactory();
@@ -50,7 +108,7 @@ public class TestJMX2Json {
             listBeans(jg, new ObjectName("*:*"), null);
 
         } catch (MalformedObjectNameException e) {
-            LOG.error("shouldn't happen", e);
+            throw new AssertionError(e);
         }
 
         jg.close();
@@ -63,9 +121,7 @@ public class TestJMX2Json {
         names = mBeanServer.queryNames(qry, null);
 
         jg.writeArrayFieldStart("beans");
-        Iterator<ObjectName> it = names.iterator();
-        while (it.hasNext()) {
-            ObjectName oname = it.next();
+        for (ObjectName oname : names) {
             MBeanInfo minfo;
             String code = "";
             Object attributeinfo = null;
@@ -78,43 +134,24 @@ public class TestJMX2Json {
                         prs = "modelerType";
                         code = (String) mBeanServer.getAttribute(oname, prs);
                     }
-                    if (attribute!=null) {
+                    if (attribute != null) {
                         prs = attribute;
                         attributeinfo = mBeanServer.getAttribute(oname, prs);
                     }
-                } catch (AttributeNotFoundException e) {
-                    // If the modelerType attribute was not found, the class name is used
-                    // instead.
-                    LOG.error("getting attribute " + prs + " of " + oname
-                            + " threw an exception", e);
-                } catch (MBeanException e) {
-                    // The code inside the attribute getter threw an exception so log it,
-                    // and fall back on the class name
-                    LOG.error("getting attribute " + prs + " of " + oname
-                            + " threw an exception", e);
-                } catch (RuntimeException e) {
-                    // For some reason even with an MBeanException available to them
-                    // Runtime exceptionscan still find their way through, so treat them
-                    // the same as MBeanException
-                    LOG.error("getting attribute " + prs + " of " + oname
-                            + " threw an exception", e);
-                } catch ( ReflectionException e ) {
-                    // This happens when the code inside the JMX bean (setter?? from the
-                    // java docs) threw an exception, so log it and fall back on the
-                    // class name
+                } catch (AttributeNotFoundException | MBeanException | ReflectionException | RuntimeException e) {
                     LOG.error("getting attribute " + prs + " of " + oname
                             + " threw an exception", e);
                 }
             } catch (InstanceNotFoundException e) {
                 //Ignored for some reason the bean was not found so don't output it
                 continue;
-            } catch ( IntrospectionException e ) {
+            } catch (IntrospectionException e) {
                 // This is an internal error, something odd happened with reflection so
                 // log it and don't output the bean.
                 LOG.error("Problem while trying to process JMX query: " + qry
                         + " with MBean " + oname, e);
                 continue;
-            } catch ( ReflectionException e ) {
+            } catch (ReflectionException e) {
                 // This happens when the code inside the JMX bean threw an exception, so
                 // log it and don't output the bean.
                 LOG.error("Problem while trying to process JMX query: " + qry
@@ -140,8 +177,8 @@ public class TestJMX2Json {
                 writeAttribute(jg, attribute, attributeinfo);
             } else {
                 MBeanAttributeInfo attrs[] = minfo.getAttributes();
-                for (int i = 0; i < attrs.length; i++) {
-                    writeAttribute(jg, oname, attrs[i]);
+                for (MBeanAttributeInfo attr : attrs) {
+                    writeAttribute(jg, oname, attr);
                 }
             }
             jg.writeEndObject();
@@ -157,11 +194,11 @@ public class TestJMX2Json {
         if ("modelerType".equals(attName)) {
             return;
         }
-        if (attName.indexOf("=") >= 0 || attName.indexOf(":") >= 0
-                || attName.indexOf(" ") >= 0) {
+        if (attName.contains("=") || attName.contains(":") || attName.contains(" ")) {
             return;
         }
-        Object value = null;
+
+        Object value;
         try {
             value = mBeanServer.getAttribute(oname, attName);
         } catch (RuntimeMBeanException e) {
@@ -183,25 +220,8 @@ public class TestJMX2Json {
             //just told us that it has this attribute, but if this happens just don't output
             //the attribute.
             return;
-        } catch (MBeanException e) {
-            //The code inside the attribute getter threw an exception so log it, and
-            // skip outputting the attribute
+        } catch (MBeanException | RuntimeException | InstanceNotFoundException | ReflectionException e) {
             LOG.error("getting attribute "+attName+" of "+oname+" threw an exception", e);
-            return;
-        } catch (RuntimeException e) {
-            //For some reason even with an MBeanException available to them Runtime exceptions
-            //can still find their way through, so treat them the same as MBeanException
-            LOG.error("getting attribute "+attName+" of "+oname+" threw an exception", e);
-            return;
-        } catch (ReflectionException e) {
-            //This happens when the code inside the JMX bean (setter?? from the java docs)
-            //threw an exception, so log it and skip outputting the attribute
-            LOG.error("getting attribute "+attName+" of "+oname+" threw an exception", e);
-            return;
-        } catch (InstanceNotFoundException e) {
-            //Ignored the mbean itself was not found, which should never happen because we
-            //just accessed it (perhaps something unregistered in-between) but if this
-            //happens just don't output the attribute.
             return;
         }
 

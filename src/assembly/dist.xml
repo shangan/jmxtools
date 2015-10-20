@@ -1,0 +1,38 @@
+<assembly>
+    <id>dist</id>
+
+    <formats>
+        <format>tar.gz</format>
+    </formats>
+
+    <!-- All dependent JARs go to 'lib' directory -->
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+        </dependencySet>
+    </dependencySets>
+
+    <fileSets>
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>README</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <fileMode>755</fileMode>
+            <directory>${project.basedir}/bin</directory>
+            <outputDirectory>bin</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/conf</directory>
+            <outputDirectory>conf</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/example</directory>
+            <outputDirectory>example</outputDirectory>
+        </fileSet>
+    </fileSets>
+
+</assembly>

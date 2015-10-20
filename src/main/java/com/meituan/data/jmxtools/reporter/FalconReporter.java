@@ -2,7 +2,6 @@ package com.meituan.data.jmxtools.reporter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.meituan.data.jmxtools.utils.Tuple2;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -14,50 +13,67 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Report metrics to Falcon. See
  * http://wiki.sankuai.com/pages/viewpage.action?pageId=217873642
  */
-public class FalconReporter extends MetricsReporter {
+public class FalconReporter implements Reporter {
     static final Logger LOG = LoggerFactory.getLogger(FalconReporter.class);
-    static final String FALCON_REPORT_API_URL = "http://127.0.0.1:1988/v1/push";
+
+    private final String apiUrl;
+    private final int step;
+    private final long timestamp;
 
     private static class PayloadItem {
-        enum CounterType {
-            GAUGE, COUNTER
-        }
-
         public String endpoint;
         public String metric;
         public int timestamp;
         public int step;
         public Number value;
-        public CounterType counterType;
+        public Metric.Type counterType;
         public String tags;
 
-        public PayloadItem(String endpoint, String metric, int timestamp, Number value) {
+        public PayloadItem(String endpoint, String metric, int timestamp, int step,
+                           Number value, Metric.Type counterType) {
             this.endpoint = endpoint;
             this.metric = metric;
             this.timestamp = timestamp;
-            this.step = 60;
+            this.step = step;
             this.value = value;
-            this.counterType = CounterType.GAUGE;
+            this.counterType = counterType;
             this.tags = "";
         }
     }
 
-    public FalconReporter(String serviceHost, String serviceName) {
-        super(serviceHost, serviceName);
+    FalconReporter(Map<String, String> options) {
+        checkNotNull(options, "options is null");
+        checkArgument(options.get("apiUrl") != null, "apiUrl not found in options");
+        checkArgument(options.get("step") != null, "step not found in options");
+
+        apiUrl = options.get("apiUrl");
+        try {
+            step = Integer.parseInt(options.get("step"));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid step value", e);
+        }
+        this.timestamp = System.currentTimeMillis() / 1000;
     }
 
-    private String convertToPayload(List<Tuple2<String, Number>> metrics) throws JsonProcessingException {
+    private String convertToPayload(String serviceHost, String serviceName,
+                                    List<Metric> metrics) throws JsonProcessingException {
         List<PayloadItem> payload = new ArrayList<>();
-        for (Tuple2<String, Number> metric : metrics) {
+        for (Metric metric : metrics) {
             payload.add(new PayloadItem(serviceHost,
-                    serviceName + "." + metric._1,
-                    (int) timestamp,
-                    metric._2));
+                    serviceName + "." + metric.getName(),
+                    (int) this.timestamp,
+                    this.step,
+                    metric.getValue(),
+                    metric.getType()));
         }
 
         ObjectMapper mapper = new ObjectMapper();
@@ -65,11 +81,15 @@ public class FalconReporter extends MetricsReporter {
     }
 
     @Override
-    public void report(List<Tuple2<String, Number>> metrics) throws MetricsReportException {
-        try {
-            String payload = convertToPayload(metrics);
+    public void report(String serviceHost, String serviceName, List<Metric> metrics) throws MetricsReportException {
+        checkNotNull(serviceHost, "serviceHost is null");
+        checkNotNull(serviceName, "serviceName is null");
+        checkNotNull(metrics, "metrics is null");
 
-            HttpPost post = new HttpPost(FALCON_REPORT_API_URL);
+        try {
+            String payload = convertToPayload(serviceHost, serviceName, metrics);
+
+            HttpPost post = new HttpPost(apiUrl);
             post.setEntity(new StringEntity(payload));
 
             try (CloseableHttpClient client = HttpClients.createDefault()) {

@@ -1,25 +1,18 @@
-WARNING: this description is outdated.
+jmxtools is a library for collecting and reporting JMX metrics for java system.
 
-Report JMX metrics to Falcon according to `setting.json`:
 ```
-./jmx2falcon-0.1-uber.jar report [--dry-run] --conf conf/setting.json
-```
+Usage: jmxtools COMMAND
+---------
+where COMMAND is one of:
+  report          collect JMX metrics and report to a monitoring system
+  collect         collect JMX metrics and print them
+  jmx2json        print a JSON representation of JMX information
 
-Dump JMX metrics of remote java process as a JSON document:
-```
-./jmx2falcon-0.1-uber.jar dump host:port
-```
-
-
-A hypothetical file structure for a metrics collecting service using jmx2falcon. 
-```
-bin/
-  jmx2falcon
-conf/
-  hivemetastore.json
-  hiveserver2.json
-  presto.json
-lib/
-  jmx2falcon-0.1-uber.jar
+Examples:
+---------
+jmxtools report <path-to-config-file>
+jmxtools collect <path-to-config-files>...
+jmxtools jmx2json --remote host:port
+                  --local <process-regex>
 ```
 

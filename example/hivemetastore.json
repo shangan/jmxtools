@@ -1,5 +1,14 @@
 {
   "serviceName": "HiveMetaStore",
+  /* Reporter defines where collected metrics are sent to */
+  "reporter": {
+    "type": "falcon",
+    "options": {
+      "apiUrl": "http://127.0.0.1:1988/v1/push",
+      "step": "60"
+    }
+  },
+  /* Endpoint specifies the JVM from which metrics are collected */
   "endpoints": [
     {
       "name": "dev-hdp-nn02:5555",
@@ -12,66 +21,111 @@
   ],
   "queries": [
     {
-      "name": "Memory",
+      "groupName": "Memory",
       "objectName": "java.lang:type=Memory",
-      "attributes": [
-        ["HeapMemoryUsage", "used"],
-        ["HeapMemoryUsage", "committed"],
-        ["HeapMemoryUsage", "max"],
-        ["NonHeapMemoryUsage", "used"],
-        ["NonHeapMemoryUsage", "committed"],
-        ["NonHeapMemoryUsage", "max"]
-      ]
+      "attributes": [{
+        "name": "HeapMemoryUsage.used",
+        "type": "gauge"
+      }, {
+        "name": "HeapMemoryUsage.committed",
+        "type": "gauge"
+      }, {
+        "name": "HeapMemoryUsage.max",
+        "type": "gauge"
+      }, {
+        "name": "NonHeapMemoryUsage.used",
+        "type": "gauge"
+      }, {
+        "name": "NonHeapMemoryUsage.committed",
+        "type": "gauge"
+      }, {
+        "name": "NonHeapMemoryUsage.max",
+        "type": "gauge"
+      }]
     }, {
-      "name": "EdenSpace",
+      "groupName": "EdenSpace",
       "objectName": "java.lang:type=MemoryPool,name=PS Eden Space",
-      "attributes": [
-        ["Usage", "used"],
-        ["Usage", "committed"],
-        ["Usage", "max"]
-      ]
+      "attributes": [{
+        "name": "Usage.used",
+        "type": "gauge"
+      }, {
+        "name": "Usage.committed",
+        "type": "gauge"
+      }, {
+        "name": "Usage.max",
+        "type": "gauge"
+      }]
     }, {
-      "name": "SurvivorSpace",
+      "groupName": "SurvivorSpace",
       "objectName": "java.lang:type=MemoryPool,name=PS Survivor Space",
-      "attributes": [
-        ["Usage", "used"],
-        ["Usage", "committed"],
-        ["Usage", "max"]
-      ]
+      "attributes": [{
+        "name": "Usage.used",
+        "type": "gauge"
+      }, {
+        "name": "Usage.committed",
+        "type": "gauge"
+      }, {
+        "name": "Usage.max",
+        "type": "gauge"
+      }]
     }, {
-      "name": "OldSpace",
+      "groupName": "OldSpace",
       "objectName": "java.lang:type=MemoryPool,name=PS Old Gen",
-      "attributes": [
-        ["Usage", "used"],
-        ["Usage", "committed"],
-        ["Usage", "max"]
-      ]
+      "attributes": [{
+        "name": "Usage.used",
+        "type": "gauge"
+      }, {
+        "name": "Usage.committed",
+        "type": "gauge"
+      }, {
+        "name": "Usage.max",
+        "type": "gauge"
+      }]
     }, {
-      "name": "PermSpace",
+      "groupName": "PermSpace",
       "objectName": "java.lang:type=MemoryPool,name=PS Perm Gen",
-      "attributes": [
-        ["Usage", "used"],
-        ["Usage", "committed"],
-        ["Usage", "max"]
-      ]
+      "attributes": [{
+        "name": "Usage.used",
+        "type": "gauge"
+      }, {
+        "name": "Usage.committed",
+        "type": "gauge"
+      }, {
+        "name": "Usage.max",
+        "type": "gauge"
+      }]
     }, {
-      "name": "MinorGC",
+      "groupName": "MinorGC",
       "objectName": "java.lang:type=GarbageCollector,name=PS Scavenge",
-      "attributes": [
-        ["CollectionCount"],
-        ["CollectionTime"],
-        ["LastGcInfo", "GcThreadCount"],
-        ["LastGcInfo", "duration"]
-      ]
+      "attributes": [{
+        "name": "CollectionCount",
+        "type": "counter"
+      }, {
+        "name": "CollectionTime",
+        "type": "counter"
+      }, {
+        "name": "LastGcInfo.GcThreadCount",
+        "type": "gauge"
+      }, {
+        "name": "LastGcInfo.duration",
+        "type": "gauge"
+      }]
     }, {
-      "name": "MajorGC",
+      "groupName": "MajorGC",
       "objectName": "java.lang:type=GarbageCollector,name=PS MarkSweep",
-      "attributes": [
-        ["CollectionCount"],
-        ["CollectionTime"],
-        ["LastGcInfo", "GcThreadCount"],
-        ["LastGcInfo", "duration"]
-      ]
+      "attributes": [{
+        "name": "CollectionCount",
+        "type": "counter"
+      }, {
+        "name": "CollectionTime",
+        "type": "counter"
+      }, {
+        "name": "LastGcInfo.GcThreadCount",
+        "type": "gauge"
+      }, {
+        "name": "LastGcInfo.duration",
+        "type": "gauge"
+      }]
     }
   ]
 }
