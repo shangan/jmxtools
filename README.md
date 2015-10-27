@@ -11,8 +11,12 @@ where COMMAND is one of:
 Examples:
 ---------
 jmxtools report <path-to-config-file>
-jmxtools collect <path-to-config-files>...
-jmxtools jmx2json --remote host:port
-                  --local <process-regex>
+jmxtools collect <endpoint>
+                 --conf <path-to-config-file>
+jmxtools jmx2json <endpoint>
+
+where endpoint is one of:
+local:process-regex     for local JVM
+remote:host:port        for remote JVM
 ```
 

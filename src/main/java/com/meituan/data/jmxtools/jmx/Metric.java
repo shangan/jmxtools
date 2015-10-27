@@ -1,4 +1,4 @@
-package com.meituan.data.jmxtools.reporter;
+package com.meituan.data.jmxtools.jmx;
 
 import com.google.common.base.MoreObjects;
 

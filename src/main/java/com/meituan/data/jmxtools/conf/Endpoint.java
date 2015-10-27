@@ -66,4 +66,20 @@ public class Endpoint {
         }
         return "LocalEndpoint(" + name + ")";
     }
+
+    /**
+     * Construct an endpoint from its tagged representation.
+     * - Remote endpoint is of format "remote:host:port",
+     * - Local endpoint is of format "local:process-regex"
+     * @param tagged tagged representation of a endpoint
+     * @return corresponding endpoint instance
+     * @throws IllegalArgumentException when passed a invalid representation
+     */
+    public static Endpoint valueOf(String tagged) {
+        checkNotNull(tagged, "tagged is null");
+        String[] parts = tagged.split(":", 2);
+        checkArgument(parts.length == 2 && (parts[0].equals("local") || parts[0].equals("remote")),
+                "invalid tagged format");
+        return new Endpoint(parts[1], parts[0].equals("remote"));
+    }
 }

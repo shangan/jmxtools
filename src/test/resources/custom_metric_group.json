@@ -1,0 +1,9 @@
+{
+  "group": "CustomGroup",
+  "resolver": "custom",
+  "class": "com.meituan.data.jmxtools.conf.TestCustomResolver",
+  "config": {
+    "c1": "a",
+    "c2": "b"
+  }
+}

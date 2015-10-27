@@ -1,0 +1,13 @@
+{
+  "group": "QueryManager",
+  "resolver": "glob",
+  "objectName": "com.facebook.presto.execution:name=QueryManager",
+  "gauges": [
+    "RunningQueries",
+    "StartedQueries.*.Count"
+  ],
+  "counters": [
+    "StartedQueries.TotalCount",
+    "CompletedQueries.TotalCount"
+  ]
+}

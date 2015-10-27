@@ -4,21 +4,16 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-// FIXME more elaborate tests based on JUnit
-public class TestReadConf {
-    public static void main(String[] args) throws IOException {
-        InputStream is = new FileInputStream(new File("example/hivemetastore.json"));
-
+public class ConfTestBase {
+    static <T> T fromFile(String fileName, Class<T> valueType) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         mapper.enable(JsonParser.Feature.ALLOW_COMMENTS);
 
-        Conf hmsConf = mapper.readValue(is, Conf.class);
-        System.out.println(mapper.writeValueAsString(hmsConf));
+        InputStream is = ConfTestBase.class.getResourceAsStream("/" + fileName);
+        return mapper.readValue(is, valueType);
     }
 }

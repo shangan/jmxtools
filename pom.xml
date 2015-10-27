@@ -6,7 +6,7 @@
 
     <groupId>com.meituan.data</groupId>
     <artifactId>jmxtools</artifactId>
-    <version>0.2</version>
+    <version>0.3</version>
     <packaging>jar</packaging>
 
     <inceptionYear>2015</inceptionYear>
@@ -16,6 +16,7 @@
         <jackson.version>2.6.0</jackson.version>
         <httpclient.version>4.5</httpclient.version>
         <guava.version>18.0</guava.version>
+        <junit.version>4.12</junit.version>
     </properties>
 
     <!-- needed by buildnumber-maven-plugin to get revision number -->
@@ -63,6 +64,13 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>${httpclient.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

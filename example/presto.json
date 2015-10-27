@@ -1,0 +1,50 @@
+{
+  "serviceName": "Presto",
+  "reporter": {
+    "type": "falcon",
+    "options": {
+      "apiUrl": "http://127.0.0.1:1988/v1/push",
+      "step": "60"
+    }
+  },
+  "endpoints": [
+    {
+      "name": ".*PrestoServer.*",
+      "remote": false
+    }
+  ],
+  "metrics": [
+    {
+      "group": "QueryManager",
+      "resolver": "glob",
+      "objectName": "com.facebook.presto.execution:name=QueryManager",
+      "gauges": [
+        "RunningQueries",
+        "StartedQueries.*.Count",
+        "CompletedQueries.*.Count",
+        "FailedQueries.*.Count",
+        "UserErrorFailures.*.Count",
+        "InternalFailures.*.Count",
+        "ExternalFailures.*.Count",
+        "InsufficientResourcesFailures.*.Count",
+        "AbandonedQueries.*.Count",
+        "CanceledQueries.*.Count",
+        "ExecutionTime.*.P??",
+        "WallInputBytesRate.*.P??",
+        "CpuInputByteRate.*.P??"
+      ],
+      "counters": [
+        "StartedQueries.TotalCount",
+        "CompletedQueries.TotalCount",
+        "FailedQueries.TotalCount",
+        "UserErrorFailures.TotalCount",
+        "InternalFailures.TotalCount",
+        "ExternalFailures.TotalCount",
+        "InsufficientResourcesFailures.TotalCount",
+        "AbandonedQueries.TotalCount",
+        "CanceledQueries.TotalCount",
+        "ExecutionTime.*.Count"
+      ]
+    }
+  ]
+}

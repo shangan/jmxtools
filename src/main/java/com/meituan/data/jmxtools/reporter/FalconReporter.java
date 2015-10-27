@@ -2,6 +2,7 @@ package com.meituan.data.jmxtools.reporter;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.meituan.data.jmxtools.jmx.Metric;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -22,7 +23,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * Report metrics to Falcon. See
  * http://wiki.sankuai.com/pages/viewpage.action?pageId=217873642
  */
-public class FalconReporter implements Reporter {
+class FalconReporter implements Reporter {
     static final Logger LOG = LoggerFactory.getLogger(FalconReporter.class);
 
     private final String apiUrl;

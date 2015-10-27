@@ -5,26 +5,29 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Represent metrics configuration for a service.
+ * Represent metrics collecting & reporting configuration for a service.
  */
 public class Conf {
     private final String serviceName;
     private final ReporterConf reporterConf;
     private final List<Endpoint> endpoints;
-    private final List<MBeanQuery> queries;
+    private final List<MetricGroup> metricGroups;
 
     @JsonCreator
     public Conf(@JsonProperty("serviceName") String serviceName,
                 @JsonProperty("reporter") ReporterConf reporterConf,
                 @JsonProperty("endpoints") List<Endpoint> endpoints,
-                @JsonProperty("queries") List<MBeanQuery> queries) {
+                @JsonProperty("metrics") List<MetricGroup> metricGroups) {
         this.serviceName = checkNotNull(serviceName, "serviceName is null");
-        this.reporterConf = checkNotNull(reporterConf, "reporterConf is null");
+        this.reporterConf = checkNotNull(reporterConf, "reporter is null");
         this.endpoints = checkNotNull(endpoints, "endpoints is null");
-        this.queries = checkNotNull(queries, "queries is null");
+        this.metricGroups = checkNotNull(metricGroups, "metrics is null");
+
+        checkArgument(endpoints.size() > 0, "endpoints is empty");
     }
 
     public String getServiceName() {
@@ -40,7 +43,8 @@ public class Conf {
         return endpoints;
     }
 
-    public List<MBeanQuery> getQueries() {
-        return queries;
+    @JsonProperty("metrics")
+    public List<MetricGroup> getMetricGroups() {
+        return metricGroups;
     }
 }

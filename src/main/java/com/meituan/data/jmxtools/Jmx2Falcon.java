@@ -5,16 +5,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.meituan.data.jmxtools.conf.Conf;
 import com.meituan.data.jmxtools.conf.Endpoint;
+import com.meituan.data.jmxtools.conf.MetricGroup;
 import com.meituan.data.jmxtools.jmx.JmxConnections;
-import com.meituan.data.jmxtools.jmx.JmxQueryException;
-import com.meituan.data.jmxtools.jmx.JmxQueryExecutor;
-import com.meituan.data.jmxtools.reporter.Metric;
+import com.meituan.data.jmxtools.jmx.Metric;
 import com.meituan.data.jmxtools.reporter.MetricsReportException;
 import com.meituan.data.jmxtools.reporter.Reporter;
 import com.meituan.data.jmxtools.reporter.Reporters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.management.MBeanServerConnection;
 import javax.management.remote.JMXConnector;
 import java.io.File;
 import java.io.FileInputStream;
@@ -51,23 +51,20 @@ public class Jmx2Falcon {
                 List<Metric> metrics = Lists.newArrayList();
 
                 // connect to JMX endpoint and collect metrics
-                try (JMXConnector connection = JmxConnections.connectWithTimeout(endpoint, JMX_CONNECT_TIMEOUT_SECOND, TimeUnit.SECONDS)) {
+                try (JMXConnector connector = JmxConnections.connectWithTimeout(endpoint, JMX_CONNECT_TIMEOUT_SECOND, TimeUnit.SECONDS)) {
+                    MBeanServerConnection connection = connector.getMBeanServerConnection();
                     jmxAlive = true;
                     LOG.info("Connected to {}", endpoint.getName());
 
-                    JmxQueryExecutor executor = new JmxQueryExecutor(connection);
-                    metrics = executor.executeAll(conf.getQueries());
+                    for (MetricGroup metricGroup : conf.getMetricGroups()) {
+                        metrics.addAll(metricGroup.resolveMetrics(connection));
+                    }
 
                 } catch (IOException e) {
-                    LOG.info("Cannot connect to {}", endpoint.getName());
-                    LOG.debug("The exception stack:", e);
-
-                } catch (JmxQueryException e) {
-                    LOG.error("Failed to query metrics", e);
-
+                    LOG.error("Failed to collect metrics of " + endpoint, e);
                 }
 
-                metrics.add(createAliveMetric(jmxAlive));
+                metrics.add(new Metric("jmx.alive", jmxAlive ? 1 : 0, Metric.Type.GAUGE));
 
                 // report metrics
                 try {
@@ -84,11 +81,6 @@ public class Jmx2Falcon {
             } catch (Throwable throwable) {
                 LOG.error("Unexpected exception", throwable);
             }
-        }
-
-        private Metric createAliveMetric(boolean isAlive) {
-            final String metricName = conf.getServiceName() + "." + "jmx.alive";
-            return new Metric(metricName, isAlive ? 1 : 0, Metric.Type.GAUGE);
         }
 
         private String getLocalShortHostName() throws UnknownHostException {

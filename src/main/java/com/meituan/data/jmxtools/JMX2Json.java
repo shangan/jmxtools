@@ -74,18 +74,20 @@ public class Jmx2Json implements AutoCloseable {
 
     static void printUsageAndExit() {
         final String usage = "Usage:\n" +
-                "jmx2json --remote host:port\n" +
-                "         --local <process-regex>\n";
+                "jmx2json <endpoint>\n\n" +
+                "where <endpoint> is one of:\n" +
+                "local:process-regex     for local JVM\n" +
+                "remote:host:port        for remote JVM\n";
         System.err.println(usage);
         System.exit(1);
     }
 
     public static void main(String[] args) throws IOException {
-        if (args.length != 2 || !("--remote".equals(args[0]) || "--local".equals(args[0]))) {
+        if (args.length != 1) {
             printUsageAndExit();
         }
 
-        Endpoint endpoint = new Endpoint(/*name=*/args[1], /*isRemote=*/"--remote".equals(args[0]));
+        Endpoint endpoint = Endpoint.valueOf(args[0]);
 
         try (Jmx2Json jmx2Json = new Jmx2Json(endpoint)) {
             jmx2Json.printMBeansAsJson(new OutputStreamWriter(System.out));

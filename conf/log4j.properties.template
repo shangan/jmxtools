@@ -1,4 +1,4 @@
-jmxtools.log.dir=/tmp
+jmxtools.log.dir=/var/sankuai/logs/jmxtools
 jmxtools.log.file=jmxtools.log
 jmxtools.log.maxfilesize=10000000
 jmxtools.log.maxbackupindex=5
@@ -14,9 +14,7 @@ log4j.appender.console.encoding=UTF-8
 # Rolling File Appender
 log4j.appender.RFA=org.apache.log4j.RollingFileAppender
 log4j.appender.RFA.File=${jmxtools.log.dir}/${jmxtools.log.file}
-
 log4j.appender.RFA.MaxFileSize=${jmxtools.log.maxfilesize}
 log4j.appender.RFA.MaxBackupIndex=${jmxtools.log.maxbackupindex}
-
 log4j.appender.RFA.layout=org.apache.log4j.PatternLayout
 log4j.appender.RFA.layout.ConversionPattern=%d{ISO8601} %-5p [%t]: %c{2} (%F:%M(%L)) - %m%n

@@ -1,0 +1,5 @@
+{
+  "group": "QueryManager",
+  "objectName": "com.facebook.presto.execution:name=QueryManager",
+  "gauges": ["*"]
+}

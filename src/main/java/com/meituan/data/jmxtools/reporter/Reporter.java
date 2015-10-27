@@ -1,5 +1,7 @@
 package com.meituan.data.jmxtools.reporter;
 
+import com.meituan.data.jmxtools.jmx.Metric;
+
 import java.util.List;
 
 public interface Reporter {

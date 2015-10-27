@@ -19,9 +19,13 @@ function print_usage() {
     echo "Examples:"
     echo "---------"
     echo "jmxtools report <path-to-config-file>"
-    echo "jmxtools collect <path-to-config-files>..."
-    echo "jmxtools jmx2json --remote host:port"
-    echo "                  --local <process-regex>"
+    echo "jmxtools collect <endpoint>"
+    echo "                 --conf <path-to-config-file>"
+    echo "jmxtools jmx2json <endpoint>"
+    echo ""
+    echo "where endpoint is one of:"
+    echo "local:process-regex     for local JVM"
+    echo "remote:host:port        for remote JVM"
     echo ""
 }
 
