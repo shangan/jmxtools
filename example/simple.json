@@ -1,0 +1,22 @@
+{
+  "serviceName": "ExampleService",
+  "reporter": {
+    "type": "falcon",
+    "options": {
+      "apiUrl": "http://127.0.0.1:1988/v1/push",
+      "step": "60"
+    }
+  },
+  "endpoints": [
+    {
+      "name": ".*ExampleService.*",
+      "remote": false
+    }
+  ],
+  "metrics": [
+    {
+      "group": "JVM",
+      "resolver": "jvm"
+    }
+  ]
+}

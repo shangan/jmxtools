@@ -12,7 +12,7 @@ public abstract class MetricResolver<T extends MetricGroup> {
 
     protected final MBeanServerConnection connection;
 
-    protected MetricResolver(MBeanServerConnection connection) {
+    public MetricResolver(MBeanServerConnection connection) {
         this.connection = checkNotNull(connection, "connection is null");
     }
 

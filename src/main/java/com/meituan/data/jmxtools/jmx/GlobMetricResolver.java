@@ -6,9 +6,7 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.meituan.data.jmxtools.conf.GlobMetricGroup;
-import com.meituan.data.jmxtools.jmx.Metric.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +18,59 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static com.meituan.data.jmxtools.jmx.Metric.Type.COUNTER;
+import static com.meituan.data.jmxtools.jmx.Metric.Type.GAUGE;
 
+/**
+ * A metric resolver using file system glob-like pattern to match metrics.
+ *
+ * <p>In the pattern, '*' means any number of any characters, '?' means any one character,
+ * all other character will match itself. Also you use '\\' to escape '*' and '?'.
+ *
+ * <p>For example, "A.*.C" will match "A.BBB.C" and "A.BB.BB.C", pattern
+ * "A.B?" will match "A.B1" and "A.B2" but not "A.BBB".
+ *
+ * <p>All metrics are collected from the leaf attribute of a managed bean. If the attribute has
+ * nested structure, we go from top to bottom and using '.' to concatenate name. For array type
+ * attribute, its children are not visited.
+ *
+ * For example, the following MBean will produce three metrics: "c1", "c2.c3", "c2.c4".
+ * <pre>
+ * {
+ *     "ObjectName": "SampleObject",
+ *     "c1": 1,
+ *     "c2": {
+ *         "c3": 2,
+ *         "c4": 3
+ *     },
+ *     "c5": [{ // ignored
+ *         "c6": 4
+ *     }]
+ * }
+ * </pre>
+ *
+ * You can specify patterns for both <b>gauge</b> and <b>counter</b> metrics. To avoid
+ * duplicated name problem when you want a metric to be both gauge and counter, a
+ * ".Delta" postfix is added to all counter metrics for you.
+ *
+ * For example, if you use the following config to collect metrics for the above MBean,
+ * <pre>
+ * {
+ *   "group": "Sample",
+ *   "objectName": "SampleObject",
+ *   "gauges": ["c1", "c2.*"],
+ *   "counters": ["c1"]
+ * }
+ * </pre>
+ *
+ * The result metrics are
+ * <ul>
+ *     <li>Sample.c1</li>
+ *     <li>Sample.c1.Delta</li>
+ *     <li>Sample.c2.c3</li>
+ *     <li>Sample.c2.c4</li>
+ * </ul>
+ */
 public class GlobMetricResolver extends MetricResolver<GlobMetricGroup> {
     static final Logger LOG = LoggerFactory.getLogger(GlobMetricResolver.class);
 
@@ -39,20 +89,22 @@ public class GlobMetricResolver extends MetricResolver<GlobMetricGroup> {
 
         Map<String, Number> counters = extract(allMetrics, metricGroup.getCounters());
 
-        // merge gauges and counters
-        // if a metric appears in both set, consider it a counter.
-        //   i.e, counter glob override gauge glob.
-        Map<String, Metric> merged = Maps.newTreeMap();
-        for (String key : Sets.difference(gauges.keySet(), counters.keySet())) {
-            Metric gauge = new Metric(metricGroup.getGroupName() + "." + key, gauges.get(key), Type.GAUGE);
-            merged.put(key, gauge);
+        // Merge gauges and counters.
+        // all counter's name has a ".Delta" postfix (assuming no gauge has that postfix)
+        Map<String, Metric> result = Maps.newTreeMap();
+        final String prefix = metricGroup.getGroupName() + ".";
+        final String postfix = ".Delta";
+
+        for (String name : gauges.keySet()) {
+            String key = prefix + name;
+            result.put(key, new Metric(key, gauges.get(name), GAUGE));
         }
-        for (String key : counters.keySet()) {
-            Metric counter = new Metric(metricGroup.getGroupName() + "." + key, counters.get(key), Type.COUNTER);
-            merged.put(key, counter);
+        for (String name : counters.keySet()) {
+            String key = prefix + name + postfix;
+            result.put(key, new Metric(key, counters.get(name), COUNTER));
         }
 
-        return merged.values();
+        return result.values();
     }
 
     private Map<String, Number> fetchAllMetrics(ObjectName objectName) throws IOException {

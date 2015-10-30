@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 )
 @JsonSubTypes({
         @JsonSubTypes.Type(value = GlobMetricGroup.class, name = "glob"),
+        @JsonSubTypes.Type(value = JvmMetricGroup.class, name = "jvm"),
         @JsonSubTypes.Type(value = CustomMetricGroup.class, name = "custom")
 })
 public abstract class MetricGroup {

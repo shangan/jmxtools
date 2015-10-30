@@ -6,7 +6,7 @@
 
     <groupId>com.meituan.data</groupId>
     <artifactId>jmxtools</artifactId>
-    <version>0.3</version>
+    <version>0.4</version>
     <packaging>jar</packaging>
 
     <inceptionYear>2015</inceptionYear>

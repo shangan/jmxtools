@@ -53,6 +53,7 @@ public class GlobMetricResolverTest {
         match(text, "A.B.*");
         match(text, "A.*");
         match(text, "*.C");
+        match(text, "A*C");
         match(text, "*");
         match(text, "A.B.?");
         match(text, "A.?.C");
@@ -85,13 +86,15 @@ public class GlobMetricResolverTest {
                 "Mem.HeapMemoryUsage.committed",
                 "Mem.HeapMemoryUsage.init",
                 "Mem.HeapMemoryUsage.max",
+                "Mem.HeapMemoryUsage.used",
                 "Mem.NonHeapMemoryUsage.committed",
                 "Mem.NonHeapMemoryUsage.init",
-                "Mem.NonHeapMemoryUsage.max");
+                "Mem.NonHeapMemoryUsage.max",
+                "Mem.NonHeapMemoryUsage.used");
 
         Set<String> expectedCounters = Sets.newHashSet(
-                "Mem.HeapMemoryUsage.used",
-                "Mem.NonHeapMemoryUsage.used");
+                "Mem.HeapMemoryUsage.used.Delta",
+                "Mem.NonHeapMemoryUsage.used.Delta");
 
         Collection<Metric> metrics = resolver.resolve(group);
         Set<String> actualGauges = Sets.newHashSet();

@@ -15,6 +15,10 @@
   ],
   "metrics": [
     {
+      "group": "JVM",
+      "resolver": "jvm"
+    },
+    {
       "group": "QueryManager",
       "resolver": "glob",
       "objectName": "com.facebook.presto.execution:name=QueryManager",
