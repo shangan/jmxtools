@@ -68,9 +68,8 @@ public class Jmx2Falcon {
 
                 // report metrics
                 try {
-                    String serviceHost = endpoint.isRemote() ? endpoint.getRemoteHost() : getLocalShortHostName();
-                    reporter.report(serviceHost, conf.getServiceName(), metrics);
-                    LOG.info("Successfully report {} metrics to {}", metrics.size(), endpoint.getName());
+                    reporter.report(getServiceHost(endpoint), conf.getServiceName(), metrics);
+                    LOG.info("Successfully report {} metrics of {}", metrics.size(), endpoint.getName());
 
                 } catch (MetricsReportException e) {
                     LOG.error("Failed to report metrics", e);
@@ -83,10 +82,13 @@ public class Jmx2Falcon {
             }
         }
 
-        private String getLocalShortHostName() throws UnknownHostException {
-            String hostname = InetAddress.getLocalHost().getHostName();
-            String[] parts = hostname.split("\\.");
-            return (parts.length > 1) ? parts[0] : hostname;
+        private String getServiceHost(Endpoint endpoint) throws UnknownHostException {
+            if (!endpoint.isRemote() || "localhost".equals(endpoint.getRemoteHost())) {
+                String hostname = InetAddress.getLocalHost().getHostName();
+                String[] parts = hostname.split("\\.");
+                return (parts.length > 1) ? parts[0] : hostname;
+            }
+            return endpoint.getRemoteHost();
         }
     }
 
